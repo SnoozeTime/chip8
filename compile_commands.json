@@ -1,0 +1,27 @@
+[
+{
+  "directory": "/home/benoit/CLionProjects/chip8/cmake-build-debug/src",
+  "command": "/usr/bin/c++    -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0/include -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0  -Wall -Werror -g   -std=gnu++14 -o CMakeFiles/chip8.dir/chip_8.cc.o -c /home/benoit/CLionProjects/chip8/src/chip_8.cc",
+  "file": "/home/benoit/CLionProjects/chip8/src/chip_8.cc"
+},
+{
+  "directory": "/home/benoit/CLionProjects/chip8/cmake-build-debug/src",
+  "command": "/usr/bin/c++    -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0/include -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0  -Wall -Werror -g   -std=gnu++14 -o CMakeFiles/chip8.dir/decoder.cc.o -c /home/benoit/CLionProjects/chip8/src/decoder.cc",
+  "file": "/home/benoit/CLionProjects/chip8/src/decoder.cc"
+},
+{
+  "directory": "/home/benoit/CLionProjects/chip8/cmake-build-debug/src",
+  "command": "/usr/bin/c++    -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0/include -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0  -Wall -Werror -g   -std=gnu++14 -o CMakeFiles/main.dir/main.cpp.o -c /home/benoit/CLionProjects/chip8/src/main.cpp",
+  "file": "/home/benoit/CLionProjects/chip8/src/main.cpp"
+},
+{
+  "directory": "/home/benoit/CLionProjects/chip8/cmake-build-debug/src",
+  "command": "/usr/bin/c++    -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0/include -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0  -Wall -Werror -g   -std=gnu++14 -o CMakeFiles/debug.dir/debug.cc.o -c /home/benoit/CLionProjects/chip8/src/debug.cc",
+  "file": "/home/benoit/CLionProjects/chip8/src/debug.cc"
+},
+{
+  "directory": "/home/benoit/CLionProjects/chip8/cmake-build-debug/test",
+  "command": "/usr/bin/c++    -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0/include -I/home/benoit/CLionProjects/chip8/googletest-release-1.7.0 -I/home/benoit/CLionProjects/chip8/src  -g   -std=gnu++14 -o CMakeFiles/opcode_test.dir/opcode_test.cc.o -c /home/benoit/CLionProjects/chip8/test/opcode_test.cc",
+  "file": "/home/benoit/CLionProjects/chip8/test/opcode_test.cc"
+}
+]
