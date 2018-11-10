@@ -65,6 +65,15 @@ void Chip8::decrease_timers() {
     if (sound_timer_ > 0) sound_timer_--;
 }
 
+void Chip8::set_key_pressed(const size_t& index) {
+    // No problem is overflow, std::array will scream.
+    key_[index] = true;
+}
+
+void Chip8::set_key_released(const size_t& index) {
+    // No problem is overflow, std::array will scream.
+    key_[index] = false;
+}
 void Chip8::load_game(std::string source) {
 
     std::ifstream input(source, std::ios::binary);

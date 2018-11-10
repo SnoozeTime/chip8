@@ -3,7 +3,7 @@
 #include <thread>
 #include <chrono>
 #include "chip_8.h"
-
+#include <unordered_map>
 using namespace snooz;
 
 #include <SFML/Graphics.hpp>
@@ -13,6 +13,23 @@ constexpr int zoom = 10;
 constexpr int WIDTH = 64 * zoom;
 constexpr int HEIGHT = (32 + 10) * zoom;
 constexpr int loop_delta_time = 17; //ms ~60Hz
+std::unordered_map<int, size_t> keyboard_mapping = {
+    {sf::Keyboard::Num1, 0x1},
+    {sf::Keyboard::Num2, 0x2},
+    {sf::Keyboard::Num3, 0x3},
+    {sf::Keyboard::Q, 0x4},
+    {sf::Keyboard::W, 0x5},
+    {sf::Keyboard::E, 0x6},
+    {sf::Keyboard::A, 0x7},
+    {sf::Keyboard::S, 0x8},
+    {sf::Keyboard::D, 0x9},
+    {sf::Keyboard::Z, 0xA},
+    {sf::Keyboard::X, 0xB},
+    {sf::Keyboard::C, 0xC},
+    {sf::Keyboard::R, 0xD},
+    {sf::Keyboard::F, 0xE},
+    {sf::Keyboard::V, 0xF},
+};
 
 void update_pixels(Chip8& chip, std::vector<sf::RectangleShape>& rectangles) {
 
@@ -81,8 +98,9 @@ int main(int argc, char** argv)
             if (event.type == sf::Event::Closed)
                 window.close();
 
+            // Input is done with a hex keyboard that has 16 keys which range from 0 to F. The '8', '4', '6', and '2' keys are typically used for directional input.
 
-                //Respond to key pressed events
+            //Respond to key pressed events
             if (event.type == sf::Event::EventType::KeyPressed){
                 if (event.key.code == sf::Keyboard::Space){
                     // Do something here
@@ -90,6 +108,9 @@ int main(int argc, char** argv)
                     if (!is_debug) debug_text = "";
                 }
 
+                if (keyboard_mapping.find((int)event.key.code) != keyboard_mapping.end()) {
+                    chip8.set_key_pressed(keyboard_mapping[static_cast<int>(event.key.code)]);
+                }
                 // Debug prints
                 if (is_debug) {
                     switch (event.key.code) {
@@ -100,6 +121,14 @@ int main(int argc, char** argv)
                         break;
                     }
                 }
+            }
+
+            if (event.type == sf::Event::EventType::KeyReleased) {
+
+                if (keyboard_mapping.find((int)event.key.code) != keyboard_mapping.end()) {
+                    chip8.set_key_released(keyboard_mapping[static_cast<int>(event.key.code)]);
+                }
+
             }
         }
 

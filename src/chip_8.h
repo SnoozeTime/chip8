@@ -34,7 +34,9 @@ public:
     std::string print_state();
     std::uint8_t register_value(size_t index) const;
 
-
+    // Keyboard control. Either press or release. Press will put to 1, release to 0.
+    void set_key_pressed(const size_t& key_index);
+    void set_key_released(const size_t& key_index);
     // timers are decreased in the main loop
     void decrease_timers();
 
@@ -185,7 +187,8 @@ protected:
     std::uint16_t sp_{0};
 
     // Hex-based keypad.
-    // std::array<uint8_t, 16> key_;
+    std::array<bool, 0xF> key_;
+
     bool draw_flag_{false};
     
     Decoder decoder_;
