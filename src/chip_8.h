@@ -33,6 +33,11 @@ public:
 
     std::string print_state();
     std::uint8_t register_value(size_t index) const;
+
+
+    // timers are decreased in the main loop
+    void decrease_timers();
+
 protected:
 
     constexpr static std::uint8_t chip8_fontset[80] = {
@@ -63,10 +68,17 @@ protected:
     // for opcode such as 0x8...
     std::unordered_map<uint16_t, std::function<void ()>> arithmetic_dispath_;
 
+    // for 0xF...
+    std::unordered_map<uint16_t, std::function<void ()>> input_dispatch_;
 
     // --------------------------------------------------------------------
     // for opcodes.
     // --------------------------------------------------------------------
+    // routing 0000 codes
+    void op_0000();
+    // Flow control - return from a subroutine
+    // 00EE     Flow    return;     Returns from a subroutine. 
+    void op_00EE();
 
     // ANNN 	MEM 	I = NNN 	Sets I to the address NNN.
     void op_ANNN();
@@ -124,14 +136,26 @@ protected:
     // and to 0 if that doesn’t happen
     void op_DXYN();
 
+    // F000 operations...
+    void op_F000();
+
+    // Timers
+    // FX07     Timer   Vx = get_delay()    Sets VX to the value of the delay timer. 
+    void op_FX07();
+
+    // FX15     Timer   delay_timer(Vx)     Sets the delay timer to VX.
+    void op_FX15();
+    // FX18     Sound   sound_timer(Vx)     Sets the sound timer to VX.
+    void op_FX18();
+
     // --------------------------------------------------------------------
     // state
     // --------------------------------------------------------------------
 
     // random number generator
     std::random_device r_{};
-     
-        // Choose a random mean between 1 and 6
+
+    // Choose a random mean between 1 and 6
     std::default_random_engine e1;
     std::uniform_int_distribution<int> uniform_dist{0, 0xFF};
 
@@ -153,8 +177,8 @@ protected:
     std::array<std::uint8_t, 64*32> gfx_;
 
     // Interupts and hardware registers. The Chip 8 has none, but there are two timer registers that count at 60 Hz. When set above zero they will count down to zero.
-    // std::uint8_t delay_timer_{0};
-    // std::uint8_t sound_timer_{0};
+    std::uint8_t delay_timer_{0};
+    std::uint8_t sound_timer_{0};
 
     // when calling subroutines.
     std::array<std::uint16_t, 16> stack_;

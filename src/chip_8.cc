@@ -27,6 +27,7 @@ Chip8::Chip8():
         memory_[i] = chip8_fontset[i];
 
     opcode_dispath_ = {
+            {0x0000, [this] { op_0000();}},
             {0xA000, [this] { op_ANNN();}},
             {0x1000, [this] { op_1NNN();}},
             {0x2000, [this] { op_2NNN();}},
@@ -37,6 +38,7 @@ Chip8::Chip8():
             {0x8000, [this] { op_8000();}},
             {0xC000, [this] { op_CXNN();}},
             {0xD000, [this] { op_DXYN();}},
+            {0xF000, [this] { op_F000();}},
     };
 
     arithmetic_dispath_ = {
@@ -50,6 +52,17 @@ Chip8::Chip8():
             {0x0007, [this] {op_8xy7();}},
             {0x000E, [this] {op_8xyE();}},
     };
+
+    input_dispatch_ = {
+            {0x0007, [this] { op_FX07();}},
+            {0x0015, [this] { op_FX15();}},
+            {0x0018, [this] { op_FX18();}},
+    };
+}
+
+void Chip8::decrease_timers() {
+    if (delay_timer_ > 0) delay_timer_--;
+    if (sound_timer_ > 0) sound_timer_--;
 }
 
 void Chip8::load_game(std::string source) {
@@ -80,6 +93,25 @@ void Chip8::emulateCycle() {
 void Chip8::next_opcode() {
     opcode_ = (memory_[pc_] << 8) | memory_[pc_+1];
 }
+
+void Chip8::op_0000() {
+    if ((opcode_ & 0x00FF) == 0x00EE) {
+        op_00EE();
+    } else {
+        std::cerr << "Got 0xNNN...\n";
+        pc_ += 2;
+    }
+}
+
+// Flow control - return from a subroutine
+// 00EE     Flow    return;     Returns from a subroutine. 
+void Chip8::op_00EE() {
+    // get the index from last stack and increase by 2 to jump to next instruction
+    assert(sp_ > 0);
+    pc_ = stack_[sp_-1]+2;
+    sp_--;
+}
+
 
 void Chip8::op_ANNN() {
     I_ = opcode_ & 0x0FFF;
@@ -137,7 +169,7 @@ void Chip8::op_8000() {
     if (arithmetic_dispath_.find(opcode_& 0x000F) != arithmetic_dispath_.end()) {
         arithmetic_dispath_[opcode_&0x000F]();
     } else {
-        std::cerr << "Unknown opcode " << opcode_ << std::endl;
+        std::cerr << "Unknown opcode " << std::hex << opcode_ << std::endl;
     }
 }
 
@@ -241,6 +273,32 @@ void Chip8::op_DXYN() {
     draw_flag_ = true;
     pc_ += 2;
 }
+
+void Chip8::op_F000() {
+    if (input_dispatch_.find(opcode_& 0x00FF) != input_dispatch_.end()) {
+        input_dispatch_[opcode_&0x00FF]();
+    } else {
+        std::cerr << "Unknown opcode " << std::hex << opcode_ << std::endl;
+    }
+
+}
+
+void Chip8::op_FX07() {
+    V_[(opcode_ & 0x0F00) >> 8] = delay_timer_;
+    pc_ += 2;
+}
+// FX15     Timer   delay_timer(Vx)     Sets the delay timer to VX.
+void Chip8::op_FX15() {
+    delay_timer_ = V_[(opcode_ & 0x0F00) >> 8]; 
+    pc_ += 2;
+}
+
+// FX18     Sound   sound_timer(Vx)     Sets the sound timer to VX.
+void Chip8::op_FX18() {
+    sound_timer_ = V_[(opcode_ & 0x0F00) >> 8]; 
+    pc_ += 2;
+}
+
 
 void Chip8::load_from_buffer(const std::vector<uint8_t> &buff) {
     for (int i = 0; i < buff.size(); i++) {

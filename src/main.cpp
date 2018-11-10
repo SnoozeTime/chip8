@@ -12,7 +12,7 @@ using namespace snooz;
 constexpr int zoom = 10;
 constexpr int WIDTH = 64 * zoom;
 constexpr int HEIGHT = (32 + 10) * zoom;
-constexpr int loop_delta_time = 20; //ms
+constexpr int loop_delta_time = 17; //ms ~60Hz
 
 void update_pixels(Chip8& chip, std::vector<sf::RectangleShape>& rectangles) {
 
@@ -122,6 +122,8 @@ int main(int argc, char** argv)
             print_text(chip8.print_state(), window);
 #endif
             window.display();
+
+            chip8.decrease_timers();
             std::this_thread::sleep_for(std::chrono::milliseconds(loop_delta_time));
         } else {
             window.clear();
