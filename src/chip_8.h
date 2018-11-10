@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <vector>
 #include <random>
+#include "decoder.h"
 
 namespace snooz {
 
@@ -30,6 +31,8 @@ public:
     bool draw_flag() const;
     void set_draw_flag(bool draw_flag);
 
+    std::string print_state();
+    std::uint8_t register_value(size_t index) const;
 protected:
 
     constexpr static std::uint8_t chip8_fontset[80] = {
@@ -159,8 +162,9 @@ protected:
 
     // Hex-based keypad.
     // std::array<uint8_t, 16> key_;
-    
     bool draw_flag_{false};
+    
+    Decoder decoder_;
 };
 }
 

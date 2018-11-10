@@ -7,10 +7,12 @@
 using namespace snooz;
 
 #include <SFML/Graphics.hpp>
+#define DEBUG 1
 
 constexpr int zoom = 10;
 constexpr int WIDTH = 64 * zoom;
 constexpr int HEIGHT = (32 + 10) * zoom;
+constexpr int loop_delta_time = 20; //ms
 
 void update_pixels(Chip8& chip, std::vector<sf::RectangleShape>& rectangles) {
 
@@ -39,68 +41,95 @@ void update_pixels(Chip8& chip, std::vector<sf::RectangleShape>& rectangles) {
 sf::Font FONT;
 
 void setup_graphics();
-void print_chip_state(Chip8& chip, sf::RenderWindow& window);
+void print_text(std::string text_str, sf::RenderWindow& window);
 
 int main(int argc, char** argv)
 {
-    if (argc != 2) {
-            std::cerr << "Usage: " << argv[0] << " <SOURCE>\n";
+    if (argc != 3) {
+            std::cerr << "Usage: " << argv[0] << "(run|print) <SOURCE>\n";
             return -1;
     }
+
+    std::string mode(argv[1]);
+    std::string game(argv[2]);
+
+    if (mode == "print") {
+        Decoder decoder;
+        decoder.load_game(game);
+        decoder.decode();
+        return 0;
+    }
+
     setup_graphics();
 
 
     snooz::Chip8 chip8;
-// x = 4, y = 6
-    std::vector<uint8_t> source{0x61, 0x04, 0x62, 0x06};
-    source.push_back(0xA0);
-    source.push_back(0x00); // push 208 in I
-    source.push_back(0xD1); // draw at coord x = v[1]
-    source.push_back(0x25); // y = v[2], heigh = 3
-    // encode the sprite here. Most likely that will be done in other place...
-    source.push_back(0x3C);
-    source.push_back(0xC3);
-    source.push_back(0xFF);
+    chip8.load_game(game);
 
-    chip8.load_game(argv[1]);
-    //chip8.load_from_buffer(source);
-//    chip8.emulateCycle();
-  //  chip8.emulateCycle();
-   // chip8.emulateCycle();
-    // then draw
-   // chip8.emulateCycle();
     std::vector<sf::RectangleShape> rectangles;
     //update_pixels(chip8, rectangles);
     sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "SFML works!");
 
+    bool is_debug = false;
+    std::string debug_text = "";
     while (window.isOpen())
     {
         
-        chip8.emulateCycle();
         sf::Event event;
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
                 window.close();
-        }
 
 
-        window.clear();
-        // Update the screen only if there is a change. Then redraw
-        if (chip8.draw_flag()) {
-            update_pixels(chip8, rectangles);
-            // meh. save some cpu cycles.
-            chip8.set_draw_flag(false);
+                //Respond to key pressed events
+            if (event.type == sf::Event::EventType::KeyPressed){
+                if (event.key.code == sf::Keyboard::Space){
+                    // Do something here
+                    is_debug = !is_debug;
+                    if (!is_debug) debug_text = "";
+                }
+
+                // Debug prints
+                if (is_debug) {
+                    switch (event.key.code) {
+                    case sf::Keyboard::Num0:
+                            debug_text = std::to_string(chip8.register_value(0x00));
+                            break;
+                    default:
+                        break;
+                    }
+                }
+            }
         }
-        for (auto& rectangle: rectangles) {
-            window.draw(rectangle);
+
+        if (!is_debug) {
+            chip8.emulateCycle();
+
+
+            window.clear();
+            // Update the screen only if there is a change. Then redraw
+            if (chip8.draw_flag()) {
+                update_pixels(chip8, rectangles);
+                // meh. save some cpu cycles.
+                chip8.set_draw_flag(false);
+            }
+            for (auto& rectangle: rectangles) {
+                window.draw(rectangle);
+            }
+
+#ifdef DEBUG
+            print_text(chip8.print_state(), window);
+#endif
+            window.display();
+            std::this_thread::sleep_for(std::chrono::milliseconds(loop_delta_time));
+        } else {
+            window.clear();
+            print_text(debug_text, window);
+            window.display();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-        print_chip_state(chip8, window);
-        window.display();
-        
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
-
     return 0;
 }
 
@@ -120,15 +149,14 @@ void setup_graphics() {
     assert(FONT.loadFromFile("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"));
 }
 
-void print_chip_state(Chip8& chip, sf::RenderWindow& window) {
-    std::string state = "Bonjour";
+void print_text(std::string text_str, sf::RenderWindow& window) {
     sf::Text text;
 
     text.setFont(FONT);
-    text.setString(state);
+    text.setString(text_str);
     //
     // // set the character size
-    text.setCharacterSize(24); // in pixels, not points!
+    text.setCharacterSize(14); // in pixels, not points!
     //
     // // set the color
     text.setColor(sf::Color::White);

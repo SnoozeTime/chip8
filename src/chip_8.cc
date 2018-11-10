@@ -7,6 +7,8 @@
 #include "chip_8.h"
 #include <cassert>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 namespace snooz {
 
@@ -71,7 +73,7 @@ void Chip8::emulateCycle() {
     if (opcode_dispath_.find(opcode_& 0xF000) != opcode_dispath_.end()) {
         opcode_dispath_[opcode_&0xF000]();
     } else {
-        std::cerr << "Unknown opcode " << opcode_ << std::endl;
+        std::cerr << "Unknown opcode " << std::hex << opcode_ << std::endl;
     }
 }
 
@@ -196,7 +198,8 @@ void Chip8::op_8xyE() {
 void Chip8::op_CXNN() {
     // CXNN     Rand    Vx=rand()&NN    Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN. 
     auto rand = static_cast<std::uint8_t>(uniform_dist(e1) & 0xFF); 
-    V_[(opcode_ & 0x0F00) >> 8] = rand;    
+    V_[(opcode_ & 0x0F00) >> 8] = rand & (opcode_ & 0x0FF);
+    pc_ += 2;
 }
 
 void Chip8::op_DXYN() {
@@ -236,6 +239,7 @@ void Chip8::op_DXYN() {
         }
     }
     draw_flag_ = true;
+    pc_ += 2;
 }
 
 void Chip8::load_from_buffer(const std::vector<uint8_t> &buff) {
@@ -251,4 +255,21 @@ bool Chip8::draw_flag() const {
 void Chip8::set_draw_flag(bool flag) {
     draw_flag_ = flag;
 }
+
+std::string Chip8::print_state() {
+    std::stringstream ss;
+    ss << "I: " << I_ << '\n';
+    ss << "Registers:\n";
+    for (size_t i=0; i < V_.size(); i++) {
+        ss << i << ": " << std::to_string(V_[i]) << " - ";
+} 
+ss << '\n' << "pc: " << pc_  << " - opcode: " << std::hex << opcode_ << '\t' << decoder_.interpret(opcode_);
+    return ss.str();
+}
+
+std::uint8_t Chip8::register_value(size_t index) const {
+    return V_[index];
+}
+
+// END OF NAMESPACE
 }

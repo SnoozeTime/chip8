@@ -18,18 +18,19 @@ public:
 
     void decode();
 
+    std::string interpret(std::uint16_t opcode);
 private:
 
     void next_opcode();
 
     // Look at the first byte of the opcode and dispatch the correct function.
-    std::unordered_map<uint16_t, std::function<void()>> opcode_dispath_;
+    std::unordered_map<uint16_t, std::function<std::string(std::uint16_t) >> opcode_dispath_;
 
     // for opcode such as 0x8...
-    std::unordered_map<uint16_t, std::function<void()>> arithmetic_dispath_;
+    std::unordered_map<uint16_t, std::function<std::string(std::uint16_t) >> arithmetic_dispath_;
 
-    void unknown();
-    void print_with_desc(const std::string& msg);
+    std::string unknown() const;
+    std::string print_with_desc(std::uint16_t opcode, const std::string& msg) const;
 
 
 
@@ -52,21 +53,21 @@ private:
 4XNN 	Cond 	if(Vx!=NN) 	Skips the next instruction if VX doesn't equal NN. (Usually the next instruction is a jump to skip a code block)
 5XY0 	Cond 	if(Vx==Vy) 	Skips the next instruction if VX equals VY. (Usually the next instruction is a jump to skip a code block)
      */
-    void op_0000();
-    void op_00E0();
-    void op_00EE();
-    void op_1NNN();
-    void op_2NNN();
-    void op_3XNN();
-    void op_4XNN();
-    void op_5XY0();
+    std::string op_0000(std::uint16_t opcode) const;
+    std::string op_00E0(std::uint16_t opcode) const;
+    std::string op_00EE(std::uint16_t opcode) const;
+    std::string op_1NNN(std::uint16_t opcode) const;
+    std::string op_2NNN(std::uint16_t opcode) const;
+    std::string op_3XNN(std::uint16_t opcode) const;
+    std::string op_4XNN(std::uint16_t opcode) const;
+    std::string op_5XY0(std::uint16_t opcode) const;
 
     /*
      * 6XNN 	Const 	Vx = NN 	Sets VX to NN.
        7XNN 	Const 	Vx += NN 	Adds NN to VX. (Carry flag is not changed)
      */
-    void op_6XNN();
-    void op_7XNN();
+    std::string op_6XNN(std::uint16_t opcode) const;
+    std::string op_7XNN(std::uint16_t opcode) const;
 
     /*
      * 8XY0 	Assign 	Vx=Vy 	Sets VX to the value of VY.
@@ -79,16 +80,16 @@ private:
 8XY7 	Math 	Vx=Vy-Vx 	Sets VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't.
 8XYE 	BitOp 	Vx<<=1 	Stores the most significant bit of VX in VF and then shifts VX to the left by 1.[3]
      */
-    void op_8000();
-    void op_8XY0();
-    void op_8XY1();
-    void op_8XY2();
-    void op_8XY3();
-    void op_8XY4();
-    void op_8XY5();
-    void op_8XY6();
-    void op_8XY7();
-    void op_8XYE();
+    std::string op_8000(std::uint16_t opcode);
+    std::string op_8XY0(std::uint16_t opcode) const;
+    std::string op_8XY1(std::uint16_t opcode) const;
+    std::string op_8XY2(std::uint16_t opcode) const;
+    std::string op_8XY3(std::uint16_t opcode) const;
+    std::string op_8XY4(std::uint16_t opcode) const;
+    std::string op_8XY5(std::uint16_t opcode) const;
+    std::string op_8XY6(std::uint16_t opcode) const;
+    std::string op_8XY7(std::uint16_t opcode) const;
+    std::string op_8XYE(std::uint16_t opcode) const;
 
     /*
      * 9XY0 	Cond 	if(Vx!=Vy) 	Skips the next instruction if VX doesn't equal VY.
@@ -101,11 +102,11 @@ DXYN 	Disp 	draw(Vx,Vy,N) 	Draws a sprite at coordinate (VX, VY) that has a widt
             of this instruction. As described above, VF is set to 1 if any screen pixels are flipped from set to unset when the
             sprite is drawn, and to 0 if that doesn’t happen
      */
-    void op_9XY0();
-    void op_ANNN();
-    void op_BNNN();
-    void op_CXNN();
-    void op_DXYN();
+    std::string op_9XY0(std::uint16_t opcode) const;
+    std::string op_ANNN(std::uint16_t opcode) const;
+    std::string op_BNNN(std::uint16_t opcode) const;
+    std::string op_CXNN(std::uint16_t opcode) const;
+    std::string op_DXYN(std::uint16_t opcode) const;
 };
 
 }
