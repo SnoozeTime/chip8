@@ -9,10 +9,10 @@
 #include <sstream>
 
 namespace snooz {
-std::string Decoder::unknown() const {
+std::string Decoder::unknown(std::uint16_t opcode) const {
     //std::hex
     std::stringstream ss;
-    ss << "Unknown Opcode 0x" << std::hex << opcode_;
+    ss << "Unknown Opcode 0x" << std::hex << opcode;
     return ss.str();
 }
 
@@ -34,6 +34,8 @@ Decoder::Decoder() {
             {0xB000, [this](std::uint16_t opcode) { return op_BNNN(opcode); }},
             {0xC000, [this](std::uint16_t opcode) { return op_CXNN(opcode); }},
             {0xD000, [this](std::uint16_t opcode) { return op_DXYN(opcode); }},
+            {0xE000, [this](std::uint16_t opcode) { return op_E000(opcode); }},
+            {0xF000, [this](std::uint16_t opcode) { return op_F000(opcode); }},
 
     };
 
@@ -76,7 +78,7 @@ std::string Decoder::interpret(std::uint16_t opcode) {
         if (opcode_dispath_.find(opcode & 0xF000) != opcode_dispath_.end()) {
             return opcode_dispath_[opcode & 0xF000](opcode);
         } else {
-            return unknown();
+            return unknown(opcode);
         }
 }
 
@@ -156,7 +158,7 @@ std::string Decoder::op_8000(std::uint16_t opcode){
     if (arithmetic_dispath_.find(opcode & 0x000F) != arithmetic_dispath_.end()) {
         return arithmetic_dispath_[opcode & 0x000F](opcode);
     } else {
-        return unknown();
+        return unknown(opcode);
     }
 }
 
@@ -269,6 +271,46 @@ std::string Decoder::op_DXYN(std::uint16_t opcode) const {
     auto y = (opcode & 0x00F0) >> 4;
     std::stringstream ss;
     ss << "Draw a sprite at coordinate (V" << x << ", V" << y << ")";
+    return print_with_desc(opcode, ss.str());
+}
+
+std::string Decoder::op_E000(std::uint16_t opcode) const {
+    if ((opcode & 0x00FF) == 0x0009) {
+        return op_EX09(opcode);
+    } else if ((opcode & 0x00FF) == 0x00A1) {
+        return op_EXA1(opcode);
+    } else {
+        return unknown(opcode);
+    }
+}
+
+std::string Decoder::op_EX09(std::uint16_t opcode) const {
+    auto x = (opcode & 0x0F00) >> 8;
+    std::stringstream ss;
+    ss << "Skips the next instruction if the key stored in V" << x << " is pressed.";
+    return print_with_desc(opcode, ss.str());
+}
+
+std::string Decoder::op_EXA1(std::uint16_t opcode) const {
+    auto x = (opcode & 0x0F00) >> 8;
+    std::stringstream ss;
+    ss << "Skips the next instruction if the key stored in V" << x << " is not pressed.";
+    return print_with_desc(opcode, ss.str());
+}
+
+std::string Decoder::op_F000(std::uint16_t opcode) const {
+    if ((opcode & 0x00FF) == 0x000A) {
+        return op_FX0A(opcode);
+    } else {
+        return unknown(opcode);
+    }
+
+}
+
+std::string Decoder::op_FX0A(std::uint16_t opcode) const {
+    auto x = (opcode & 0x0F00) >> 8;
+    std::stringstream ss;
+    ss << "Wait for key and will store in V" << x;
     return print_with_desc(opcode, ss.str());
 }
 

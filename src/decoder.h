@@ -29,7 +29,7 @@ private:
     // for opcode such as 0x8...
     std::unordered_map<uint16_t, std::function<std::string(std::uint16_t) >> arithmetic_dispath_;
 
-    std::string unknown() const;
+    std::string unknown(uint16_t opcode) const;
     std::string print_with_desc(std::uint16_t opcode, const std::string& msg) const;
 
 
@@ -107,6 +107,13 @@ DXYN 	Disp 	draw(Vx,Vy,N) 	Draws a sprite at coordinate (VX, VY) that has a widt
     std::string op_BNNN(std::uint16_t opcode) const;
     std::string op_CXNN(std::uint16_t opcode) const;
     std::string op_DXYN(std::uint16_t opcode) const;
+
+    // key pressing
+    std::string op_E000(std::uint16_t opcode) const;
+    std::string op_EX09(std::uint16_t opcode) const;
+    std::string op_EXA1(std::uint16_t opcode) const;
+    std::string op_F000(std::uint16_t opcode) const;
+    std::string op_FX0A(std::uint16_t opcode) const;
 };
 
 }

@@ -275,4 +275,124 @@ TEST(opcode, delay_FX07) {
     ASSERT_EQ(0x03, chip8.V()[0xB]);
 }
 
+TEST(opcode, keyboard_notpressed_op_EXA1_keypressed) {
+    // will skip next instrution if key stored in VX is pressed.
+    Chip8FreeAccess chip8;
 
+    std::vector<uint8_t> source{
+            0x61, 0x04, // VX = 4
+            0xE1, 0xA1, // skip if 4 is not pressed
+            0x62, 0x01, // set v2 to 1
+            0x62, 0x00}; // set V2 to 0
+    chip8.load_from_buffer(source);
+
+    chip8.emulateCycle();
+    // do notpress
+    chip8.set_key_pressed(4);
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    ASSERT_EQ(0x01, chip8.V()[0x2]);
+}
+
+TEST(opcode, keyboard_notpressed_op_EXA1_keynotpressed) {
+    Chip8FreeAccess chip8;
+
+    std::vector<uint8_t> source{
+            0x61, 0x04, // VX = 4
+            0xE1, 0xA1, // skip if v1=4 is not pressed
+            0x62, 0x01, // set v2 to 1
+            0x62, 0x00}; // set V2 to 0
+    chip8.load_from_buffer(source);
+ 
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    ASSERT_EQ(0x00, chip8.V()[0x2]);
+}
+
+
+TEST(opcode, keyboard_pressed_op_EX9E_keynotpressed) {
+    // will skip next instrution if key stored in VX is pressed.
+    Chip8FreeAccess chip8;
+
+    std::vector<uint8_t> source{
+            0x61, 0x04, // VX = 4
+            0xE1, 0x9E, // skip if 4 is pressed
+            0x62, 0x01, // set v2 to 1
+            0x62, 0x00}; // set V2 to 0
+    chip8.load_from_buffer(source);
+ 
+    chip8.emulateCycle();
+    // do notpress
+    // chip8.set_key_pressed(4);
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    ASSERT_EQ(0x01, chip8.V()[0x2]);
+}
+
+TEST(opcode, keyboard_pressed_op_EX9E_keypressed) {
+    // will skip next instrution if key stored in VX is pressed.
+    Chip8FreeAccess chip8;
+
+    std::vector<uint8_t> source{
+            0x61, 0x04, // VX = 4
+            0xE1, 0x9E, // skip if 4 is pressed
+            0x62, 0x01, // set v2 to 1
+            0x62, 0x00}; // set V2 to 0
+    chip8.load_from_buffer(source);
+ 
+    chip8.emulateCycle();
+    // press
+    chip8.set_key_pressed(4);
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    ASSERT_EQ(0x00, chip8.V()[0x2]);
+}
+
+TEST(opcode, wait_key_op_FX0A) {
+    Chip8FreeAccess chip8;
+
+    std::vector<uint8_t> source{
+            0xF1, 0x0A, // wait for key and store value in V1
+    };
+
+    chip8.load_from_buffer(source);
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+
+    // key not pressed so nothing happens.
+    ASSERT_EQ(0x200, chip8.pc());
+    chip8.set_key_pressed(5);
+    chip8.emulateCycle();
+    ASSERT_EQ(0x202, chip8.pc());
+    ASSERT_EQ(0x05, chip8.V()[0x01]);
+}
+
+// flow control
+TEST(opcode, op_BNNN) {
+
+    Chip8FreeAccess chip8;
+
+    std::vector<uint8_t> source{
+            0x60, 0x0A, // V0 = A
+            0xB2, 0x00, // set pc = 200 + v0
+            };
+    chip8.load_from_buffer(source);
+
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    ASSERT_EQ(0x20A, chip8.pc());
+}

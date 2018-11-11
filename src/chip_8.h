@@ -73,6 +73,9 @@ protected:
     // for 0xF...
     std::unordered_map<uint16_t, std::function<void ()>> input_dispatch_;
 
+    // for 0xE...
+    std::unordered_map<uint16_t, std::function<void ()>> keyboard_dispatch_;;
+
     // --------------------------------------------------------------------
     // for opcodes.
     // --------------------------------------------------------------------
@@ -128,6 +131,9 @@ protected:
     // 8XYE 	BitOp 	Vx<<=1 	Stores the most significant bit of VX in VF and then shifts VX to the left by 1.[3]
     void op_8xyE();
 
+    // BNNN     Flow    PC=V0+NNN   Jumps to the address NNN plus V0. 
+    void op_BNNN();
+
     // CXNN     Rand    Vx=rand()&NN    Sets VX to the result of a bitwise and operation on a random number (Typically: 0 to 255) and NN. 
     void op_CXNN();
 
@@ -138,12 +144,25 @@ protected:
     // and to 0 if that doesn’t happen
     void op_DXYN();
 
+    void op_E000();
+    //  EX9E    KeyOp   if(key()==Vx)   Skips the next instruction if the key stored in VX is pressed. (Usually the next instruction is a jump to skip a code block)
+    void op_EX9E();
+    //       EXA1    KeyOp   if(key()!=Vx)   Skips the next instruction if the key stored in VX isn't pressed. (Usually the next instruction is a jump to skip a code block) 
+    void op_EXA1();
+
     // F000 operations...
     void op_F000();
 
     // Timers
     // FX07     Timer   Vx = get_delay()    Sets VX to the value of the delay timer. 
     void op_FX07();
+
+    // FX0A     KeyOp   Vx = get_key()  A key press is awaited, and then stored in VX. (Blocking Operation. All instruction halted until next key event) 
+    void op_FX0A();
+    // Only set when doing FX0A.
+    bool wait_for_key_{false};
+    bool key_pressed_{false};
+    size_t key_pressed_idx_{0};
 
     // FX15     Timer   delay_timer(Vx)     Sets the delay timer to VX.
     void op_FX15();

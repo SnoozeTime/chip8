@@ -12,7 +12,7 @@ using namespace snooz;
 constexpr int zoom = 10;
 constexpr int WIDTH = 64 * zoom;
 constexpr int HEIGHT = (32 + 10) * zoom;
-constexpr int loop_delta_time = 17; //ms ~60Hz
+constexpr int loop_delta_time = 10; //ms ~60Hz
 std::unordered_map<int, size_t> keyboard_mapping = {
     {sf::Keyboard::Num1, 0x1},
     {sf::Keyboard::Num2, 0x2},

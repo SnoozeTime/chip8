@@ -20,7 +20,7 @@ Chip8::Chip8():
 
     // black screen at first
     for (auto& pixel: gfx_) pixel = 0;
-
+    for (auto& key: key_) key = false;
 
     // Load fontset
     for(int i = 0; i < 80; ++i)
@@ -36,8 +36,10 @@ Chip8::Chip8():
             {0x6000, [this] { op_6XNN();}},
             {0x7000, [this] { op_7XNN();}},
             {0x8000, [this] { op_8000();}},
+            {0xB000, [this] { op_BNNN();}},
             {0xC000, [this] { op_CXNN();}},
             {0xD000, [this] { op_DXYN();}},
+            {0xE000, [this] { op_E000();}},
             {0xF000, [this] { op_F000();}},
     };
 
@@ -55,8 +57,14 @@ Chip8::Chip8():
 
     input_dispatch_ = {
             {0x0007, [this] { op_FX07();}},
+            {0x000A, [this] { op_FX0A();}},
             {0x0015, [this] { op_FX15();}},
             {0x0018, [this] { op_FX18();}},
+    };
+
+    keyboard_dispatch_ = {
+            {0x009E, [this] { op_EX9E();}},
+            {0x00A1, [this] { op_EXA1();}},
     };
 }
 
@@ -68,6 +76,13 @@ void Chip8::decrease_timers() {
 void Chip8::set_key_pressed(const size_t& index) {
     // No problem is overflow, std::array will scream.
     key_[index] = true;
+
+    std::cout << "PRESSED KEY " << index << '\n';
+    // This is for FX0A
+    if (wait_for_key_) {
+       key_pressed_ = true;
+       key_pressed_idx_ = index;
+    }
 }
 
 void Chip8::set_key_released(const size_t& index) {
@@ -106,8 +121,8 @@ void Chip8::next_opcode() {
 void Chip8::op_0000() {
     if ((opcode_ & 0x00FF) == 0x00EE) {
         op_00EE();
-    } else {
-        std::cerr << "Got 0xNNN...\n";
+    } else if (opcode_ == 0x00E0) {
+        for (auto& pixel : gfx_) pixel = 0;
         pc_ += 2;
     }
 }
@@ -188,7 +203,7 @@ void Chip8::op_8xy0() {
     auto Y = (opcode_ & 0x00F0) >> 4;
 
     V_[X] = V_[Y];
-    pc_++;
+    pc_ += 2;
 }
 
 void Chip8::op_8xy1() {
@@ -234,6 +249,10 @@ void Chip8::op_8xy7() {
 
 void Chip8::op_8xyE() {
 
+}
+
+void Chip8::op_BNNN() {
+    pc_ = V_[0] + (opcode_ & 0x0FFF);
 }
 
 void Chip8::op_CXNN() {
@@ -283,6 +302,37 @@ void Chip8::op_DXYN() {
     pc_ += 2;
 }
 
+void Chip8::op_E000() {
+    if (keyboard_dispatch_.find(opcode_& 0x00FF) != keyboard_dispatch_.end()) {
+        keyboard_dispatch_[opcode_&0x00FF]();
+    } else {
+        std::cerr << "Unknown opcode " << std::hex << opcode_ << std::endl;
+    }
+}
+
+//  EX9E    KeyOp   if(key()==Vx)   Skips the next instruction if the key stored in VX is pressed. (Usually the next instruction is a jump to skip a code block)
+void Chip8::op_EX9E() {
+    auto key_index = V_[(opcode_ & 0x0F00) >> 8];
+    std::cout << "Skip if key " << std::to_string(key_index) << " is pressed (addr " << std::hex << pc_ << ")\n";
+    if (key_[key_index]) {
+        pc_ += 4;
+    } else {
+        pc_ += 2;
+    }
+}
+// EXA1    KeyOp   if(key()!=Vx)   Skips the next instruction if the key stored in VX isn't pressed. (Usually the next instruction is a jump to skip a code block) 
+void Chip8::op_EXA1() {
+    auto key_index = V_[(opcode_ & 0x0F00) >> 8];
+
+    std::cout << "Skip if key " << key_index << "is not pressed (addr " << std::hex << pc_ << ")\n";
+    if (!key_[key_index]) {
+        pc_ += 4;
+    } else {
+        pc_ += 2;
+    }
+}
+
+
 void Chip8::op_F000() {
     if (input_dispatch_.find(opcode_& 0x00FF) != input_dispatch_.end()) {
         input_dispatch_[opcode_&0x00FF]();
@@ -290,6 +340,29 @@ void Chip8::op_F000() {
         std::cerr << "Unknown opcode " << std::hex << opcode_ << std::endl;
     }
 
+}
+
+void Chip8::op_FX0A() {
+    // If we aren't wait, set the blocking flag.
+    //
+    // If we are waiting, check if we found a key. If not, do nothing
+    // If yes, store in Vx and continue.
+    if (wait_for_key_) {
+
+        if (key_pressed_) {
+            V_[(opcode_ & 0x0F00) >> 8] = key_pressed_idx_;
+            pc_ += 2;
+            // reset key press state.
+            wait_for_key_ = false;
+            key_pressed_ = false;
+            key_pressed_idx_ = 0;
+        } else {
+            // chill there.
+        }
+
+    } else {
+        wait_for_key_ = true;
+    }
 }
 
 void Chip8::op_FX07() {
@@ -324,6 +397,7 @@ void Chip8::set_draw_flag(bool flag) {
 }
 
 std::string Chip8::print_state() {
+    std::cout << std::hex << pc_ << ": " << decoder_.interpret(opcode_) << '\n';
     std::stringstream ss;
     ss << "I: " << I_ << '\n';
     ss << "Registers:\n";
@@ -331,6 +405,7 @@ std::string Chip8::print_state() {
         ss << i << ": " << std::to_string(V_[i]) << " - ";
 } 
 ss << '\n' << "pc: " << pc_  << " - opcode: " << std::hex << opcode_ << '\t' << decoder_.interpret(opcode_);
+ss << '\n' << "delay timer: " << std::to_string(delay_timer_);
     return ss.str();
 }
 
