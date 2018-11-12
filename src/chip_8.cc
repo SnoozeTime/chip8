@@ -26,6 +26,7 @@ Chip8::Chip8():
     for(int i = 0; i < 80; ++i)
         memory_[i] = chip8_fontset[i];
 
+    // opcode & 0xF000
     opcode_dispath_ = {
             {0x0000, [this] { op_0000();}},
             {0xA000, [this] { op_ANNN();}},
@@ -33,9 +34,11 @@ Chip8::Chip8():
             {0x2000, [this] { op_2NNN();}},
             {0x3000, [this] { op_3XNN();}},
             {0x4000, [this] { op_4XNN();}},
+            {0x5000, [this] { op_5XY0();}},
             {0x6000, [this] { op_6XNN();}},
             {0x7000, [this] { op_7XNN();}},
             {0x8000, [this] { op_8000();}},
+            {0x9000, [this] { op_9XY0();}},
             {0xB000, [this] { op_BNNN();}},
             {0xC000, [this] { op_CXNN();}},
             {0xD000, [this] { op_DXYN();}},
@@ -63,6 +66,7 @@ Chip8::Chip8():
             {0x001E, [this] { op_FX1E();}},
             {0x0029, [this] { op_FX29();}},
             {0x0033, [this] { op_FX33();}},
+            {0x0055, [this] { op_FX55();}},
             {0x0065, [this] { op_FX65();}},
     };
 
@@ -182,6 +186,15 @@ void Chip8::op_4XNN() {
 }
 
 
+//  5XY0    Cond    if(Vx==Vy)  Skips the next instruction if VX equals VY. (Usually the next instruction is a jump to skip a code block)
+void Chip8::op_5XY0() {
+    if (V_[get_0X00(opcode_)] == V_[get_00Y0(opcode_)]) {
+        pc_ += 4;
+    } else {
+        pc_ += 2;
+    }
+}
+
 // assignment :)
 void Chip8::op_6XNN() {
     V_[(opcode_ & 0x0F00) >> 8] = opcode_ & 0xFF;
@@ -211,20 +224,27 @@ void Chip8::op_8xy0() {
 }
 
 void Chip8::op_8xy1() {
-
+    auto x = get_0X00(opcode_);
+    auto y = get_00Y0(opcode_);
+    V_[x] = V_[x] | V_[y];
+    pc_ += 2;
 }
 
 void Chip8::op_8xy2() {
-
+    auto x = get_0X00(opcode_);
+    auto y = get_00Y0(opcode_);
+    V_[x] = V_[x] & V_[y];
+    pc_ += 2;
 }
 
 void Chip8::op_8xy3() {
-
+    auto x = get_0X00(opcode_);
+    auto y = get_00Y0(opcode_);
+    V_[x] = V_[x] ^ V_[y];
+    pc_ += 2;
 }
 
 void Chip8::op_8xy4() {
-
-
     auto X = (opcode_ & 0x0F00) >> 8;
     auto Y = (opcode_ & 0x00F0) >> 4;
 
@@ -240,18 +260,59 @@ void Chip8::op_8xy4() {
 }
 
 void Chip8::op_8xy5() {
+    auto X = get_0X00(opcode_);
+    auto Y = get_00Y0(opcode_);
+
+    if (V_[X] < V_[Y]) {
+        V_[0xF] = 1;
+    } else {
+        V_[0xF] = 0;
+    }
+
+
+    V_[X] -= V_[Y];
+    pc_ += 2;
 
 }
 
 void Chip8::op_8xy6() {
-
+    auto x = get_0X00(opcode_);
+    V_[0xF] = V_[x] & 0x1;
+    V_[x] = V_[x] >> 1;
+    pc_ += 2;
 }
 
 void Chip8::op_8xy7() {
+    auto X = get_0X00(opcode_);
+    auto Y = get_00Y0(opcode_);
 
+    // set to 1 if there is NO borrow this time.
+    if (V_[X] < V_[Y]) {
+        V_[0xF] = 1;
+    } else {
+        V_[0xF] = 0;
+    }
+
+    // y - x
+    V_[X] = V_[Y] - V_[X];
+    pc_ += 2;
 }
 
 void Chip8::op_8xyE() {
+    auto x = get_0X00(opcode_);
+    V_[0xF] = (V_[x] >> 7)  & 0x1;
+    V_[x] = V_[x] << 1;
+    pc_ += 2;
+
+}
+
+ //   9XY0    Cond    if(Vx!=Vy)  Skips the next instruction if VX doesn't equal VY. (Usually the next instruction is a jump to skip a code block)
+void Chip8::op_9XY0() {
+    if (V_[get_0X00(opcode_)] != V_[get_00Y0(opcode_)]) {
+        pc_ += 4;
+    } else {
+        pc_ += 2;
+    }
 
 }
 
@@ -405,11 +466,24 @@ void Chip8::op_FX33() {
     pc_ += 2;
 }
 
+
+// FX55    MEM     reg_dump(Vx,&I)     Stores V0 to VX (including VX) in memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+void Chip8::op_FX55() {
+    auto x = get_0X00(opcode_);
+    auto mem_idx = I_;
+    for (uint8_t reg_idx=0; reg_idx <= x; reg_idx++) {
+        memory_[mem_idx] = V_[reg_idx];
+        mem_idx++;
+    }
+
+    pc_ += 2;
+}
+
 void Chip8::op_FX65() {
     auto x = get_0X00(opcode_);
     auto mem_idx = I_;
     for (uint8_t reg_idx=0; reg_idx <= x; reg_idx++) {
-        V_[x] = memory_[mem_idx];
+        V_[reg_idx] = memory_[mem_idx];
         mem_idx++;
     }
     pc_ += 2;
@@ -448,6 +522,10 @@ std::uint8_t Chip8::register_value(size_t index) const {
 
 std::uint8_t Chip8::get_0X00(std::uint16_t opcode) const {
     return (opcode & 0x0F00) >> 8;
+}
+
+std::uint8_t Chip8::get_00Y0(std::uint16_t opcode) const {
+    return (opcode & 0x00F0) >> 4;
 }
 // END OF NAMESPACE
 }

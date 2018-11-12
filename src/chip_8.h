@@ -85,9 +85,6 @@ protected:
     // 00EE     Flow    return;     Returns from a subroutine. 
     void op_00EE();
 
-    // ANNN 	MEM 	I = NNN 	Sets I to the address NNN.
-    void op_ANNN();
-
     // Jump to NNN
     // 1NNN     Flow    goto NNN;   Jumps to address NNN. 
     void op_1NNN();
@@ -103,6 +100,9 @@ protected:
     // 4XNN 	Cond 	if(Vx!=NN) 	Skips the next instruction if VX doesn't equal NN.
     // (Usually the next instruction is a jump to skip a code block)
     void op_4XNN();
+
+    //  5XY0    Cond    if(Vx==Vy)  Skips the next instruction if VX equals VY. (Usually the next instruction is a jump to skip a code block)
+    void op_5XY0();
 
     // 6XNN 	Const 	Vx = NN 	Sets VX to NN.
     void op_6XNN();
@@ -130,6 +130,12 @@ protected:
     void op_8xy7();
     // 8XYE 	BitOp 	Vx<<=1 	Stores the most significant bit of VX in VF and then shifts VX to the left by 1.[3]
     void op_8xyE();
+
+    //   9XY0    Cond    if(Vx!=Vy)  Skips the next instruction if VX doesn't equal VY. (Usually the next instruction is a jump to skip a code block)
+    void op_9XY0();
+
+    // ANNN 	MEM 	I = NNN 	Sets I to the address NNN.
+    void op_ANNN();
 
     // BNNN     Flow    PC=V0+NNN   Jumps to the address NNN plus V0. 
     void op_BNNN();
@@ -183,11 +189,15 @@ protected:
     //  Stores the binary-coded decimal representation of VX, with the most significant of three digits at the address in I, the middle digit at I plus 1, and the least significant digit at I plus 2. (In other words, take the decimal representation of VX, place the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2.)
     void op_FX33();
 
+    // FX55    MEM     reg_dump(Vx,&I)     Stores V0 to VX (including VX) in memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
+    void op_FX55();
+
     // FX65     MEM     reg_load(Vx,&I)     Fills V0 to VX (including VX) with values from memory starting at address I. The offset from I is increased by 1 for each value written, but I itself is left unmodified.
     void op_FX65();
 
     // helper to do bitwise op.
     std::uint8_t get_0X00(std::uint16_t opcode) const;
+    std::uint8_t get_00Y0(std::uint16_t opcode) const;
 
     // --------------------------------------------------------------------
     // state
