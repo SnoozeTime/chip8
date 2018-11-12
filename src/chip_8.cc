@@ -60,6 +60,10 @@ Chip8::Chip8():
             {0x000A, [this] { op_FX0A();}},
             {0x0015, [this] { op_FX15();}},
             {0x0018, [this] { op_FX18();}},
+            {0x001E, [this] { op_FX1E();}},
+            {0x0029, [this] { op_FX29();}},
+            {0x0033, [this] { op_FX33();}},
+            {0x0065, [this] { op_FX65();}},
     };
 
     keyboard_dispatch_ = {
@@ -110,7 +114,7 @@ void Chip8::emulateCycle() {
     if (opcode_dispath_.find(opcode_& 0xF000) != opcode_dispath_.end()) {
         opcode_dispath_[opcode_&0xF000]();
     } else {
-        std::cerr << "Unknown opcode " << std::hex << opcode_ << std::endl;
+        std::cerr << "Cycle - Unknown opcode " << std::hex << opcode_ << std::endl;
     }
 }
 
@@ -337,7 +341,7 @@ void Chip8::op_F000() {
     if (input_dispatch_.find(opcode_& 0x00FF) != input_dispatch_.end()) {
         input_dispatch_[opcode_&0x00FF]();
     } else {
-        std::cerr << "Unknown opcode " << std::hex << opcode_ << std::endl;
+        std::cerr << "Input - Unknown opcode " << std::hex << opcode_ << std::endl;
     }
 
 }
@@ -377,10 +381,39 @@ void Chip8::op_FX15() {
 
 // FX18     Sound   sound_timer(Vx)     Sets the sound timer to VX.
 void Chip8::op_FX18() {
-    sound_timer_ = V_[(opcode_ & 0x0F00) >> 8]; 
+    sound_timer_ = V_[get_0X00(opcode_)]; 
     pc_ += 2;
 }
 
+// FX1E     MEM     I +=Vx  Adds VX to I
+void Chip8::op_FX1E() {
+    I_ += V_[get_0X00(opcode_)];
+    pc_ += 2;
+}
+
+void Chip8::op_FX29() {
+    auto x = V_[get_0X00(opcode_)];
+    I_ = x * 5;
+    pc_ += 2;
+}
+
+void Chip8::op_FX33() {
+    auto x = V_[get_0X00(opcode_)];
+    memory_[I_]     = x / 100;
+    memory_[I_ + 1] = (x / 10) % 10;
+    memory_[I_ + 2] = (x % 100) % 10;
+    pc_ += 2;
+}
+
+void Chip8::op_FX65() {
+    auto x = get_0X00(opcode_);
+    auto mem_idx = I_;
+    for (uint8_t reg_idx=0; reg_idx <= x; reg_idx++) {
+        V_[x] = memory_[mem_idx];
+        mem_idx++;
+    }
+    pc_ += 2;
+}
 
 void Chip8::load_from_buffer(const std::vector<uint8_t> &buff) {
     for (int i = 0; i < buff.size(); i++) {
@@ -413,5 +446,8 @@ std::uint8_t Chip8::register_value(size_t index) const {
     return V_[index];
 }
 
+std::uint8_t Chip8::get_0X00(std::uint16_t opcode) const {
+    return (opcode & 0x0F00) >> 8;
+}
 // END OF NAMESPACE
 }

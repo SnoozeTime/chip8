@@ -9,6 +9,7 @@ class Chip8FreeAccess: public snooz::Chip8 {
 
 public:
 
+    const std::array<uint8_t, 4096>& memory() const { return memory_;}
     const std::array<std::uint16_t, 16>& stacks() { return stack_; }
     std::uint16_t  sp() { return sp_;}
     std::uint16_t  pc() { return pc_;}
@@ -395,4 +396,30 @@ TEST(opcode, op_BNNN) {
     chip8.emulateCycle();
     chip8.emulateCycle();
     ASSERT_EQ(0x20A, chip8.pc());
+}
+
+// decimal representation
+TEST(opcode, op_FX33) {
+   Chip8FreeAccess chip8;
+
+    // set memory(I) = 0x02
+    // memory(I+1) = 0x05
+    // memory(I+2) = 0x05
+    std::vector<uint8_t> source{
+            0x61, 0xFF, // V0 = FF (255)
+            0xA2, 0x00, // I = 200
+            0xF1, 0x33, // set pc = 200 + v0
+    };
+    chip8.load_from_buffer(source);
+
+
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+    chip8.emulateCycle();
+
+    std::cout << chip8.I() << std::endl;
+    std::cout << chip8.pc() << std::endl;
+    ASSERT_EQ(0x02, chip8.memory()[0x200]);
+    ASSERT_EQ(0x05, chip8.memory()[0x201]);
+    ASSERT_EQ(0x05, chip8.memory()[0x202]);
 }
